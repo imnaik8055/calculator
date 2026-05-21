@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product Validation Calculator — @nikrunsit</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --black: #0D0D0D;
+    --white: #FFFFFF;
+    --off: #F7F6F3;
+    --mid: #3D3D3D;
+    --light: #ADADAD;
+    --rule: #E0DED9;
+    --bg: #F4F3F0;
+    --card: #FFFFFF;
+    --green: #1A7A4A;
+    --green-bg: #EAF5EF;
+    --amber: #B7770D;
+    --amber-bg: #FFF8E8;
+    --red: #C0392B;
+    --red-bg: #FDEDED;
+    --purple: #7C5CBF;
+    --purple-bg: #F5F3FF;
+    --accent: #0D0D0D;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--black);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* HEADER */
+  .site-header {
+    background: var(--black);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .site-header .logo {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--white);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .site-header .handle {
+    font-size: 12px;
+    color: #888;
+    font-weight: 500;
+  }
+
+  /* HERO */
+  .hero {
+    background: var(--black);
+    color: var(--white);
+    padding: 48px 24px 40px;
+    text-align: center;
+    border-bottom: 1px solid #222;
+  }
+  .hero h1 {
+    font-size: clamp(26px, 5vw, 40px);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin-bottom: 12px;
+  }
+  .hero p {
+    font-size: 14px;
+    color: #999;
+    max-width: 440px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* LAYOUT */
+  .main {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 32px 16px 80px;
+  }
+
+  /* VERDICT BANNER */
+  .verdict-banner {
+    background: var(--card);
+    border: 1.5px solid var(--rule);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    transition: border-color 0.3s, background 0.3s;
+  }
+  .verdict-banner.go    { border-color: var(--green); background: var(--green-bg); }
+  .verdict-banner.caution { border-color: var(--amber); background: var(--amber-bg); }
+  .verdict-banner.nogo  { border-color: var(--red);   background: var(--red-bg); }
+
+  .verdict-score {
+    font-size: 42px;
+    font-weight: 800;
+    line-height: 1;
+    min-width: 60px;
+    text-align: center;
+    color: var(--light);
+    transition: color 0.3s;
+  }
+  .verdict-banner.go    .verdict-score { color: var(--green); }
+  .verdict-banner.caution .verdict-score { color: var(--amber); }
+  .verdict-banner.nogo  .verdict-score { color: var(--red); }
+
+  .verdict-text .label {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: var(--light);
+    transition: color 0.3s;
+  }
+  .verdict-banner.go    .label { color: var(--green); }
+  .verdict-banner.caution .label { color: var(--amber); }
+  .verdict-banner.nogo  .label { color: var(--red); }
+  .verdict-text .desc { font-size: 13px; color: var(--mid); line-height: 1.5; }
+
+  /* METRIC PILLS */
+  .metric-pills {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+  .pill-card {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .pill-card .pill-label { font-size: 10px; color: var(--light); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
+  .pill-card .pill-value { font-size: 22px; font-weight: 700; color: var(--light); transition: color 0.3s; }
+  .pill-card .pill-value.green { color: var(--green); }
+  .pill-card .pill-value.amber { color: var(--amber); }
+  .pill-card .pill-value.red   { color: var(--red); }
+  .pill-card .pill-sub  { font-size: 11px; color: var(--light); margin-top: 2px; }
+
+  /* SECTIONS */
+  .section {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .section-header {
+    background: var(--black);
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-num {
+    width: 22px; height: 22px;
+    background: #333;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; color: var(--white);
+    flex-shrink: 0;
+  }
+  .section-title { font-size: 12px; font-weight: 700; color: var(--white); letter-spacing: 0.02em; }
+  .section-body { padding: 18px; }
+
+  /* FORM GRID */
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  .field-grid.one   { grid-template-columns: 1fr; }
+  @media (max-width: 560px) {
+    .field-grid, .field-grid.three { grid-template-columns: 1fr; }
+  }
+
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 11px; font-weight: 600; color: var(--mid); text-transform: uppercase; letter-spacing: 0.05em; }
+  .field input, .field select {
+    font-size: 14px; font-weight: 500;
+    padding: 10px 12px;
+    border: 1.5px solid var(--rule);
+    border-radius: 8px;
+    background: var(--off);
+    color: var(--black);
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+    -webkit-appearance: none;
+  }
+  .field input:focus, .field select:focus { border-color: var(--black); background: var(--white); }
+  .field .hint { font-size: 11px; color: var(--light); }
+
+  /* CRITERIA TABLE */
+  .criteria { width: 100%; border-collapse: collapse; }
+  .criteria th {
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--light); padding: 6px 10px; text-align: left;
+    border-bottom: 1px solid var(--rule);
+  }
+  .criteria td {
+    padding: 9px 10px; font-size: 13px;
+    border-bottom: 1px solid var(--rule); vertical-align: middle;
+    color: var(--mid);
+  }
+  .criteria tr:last-child td { border-bottom: none; }
+  .criteria td input, .criteria td select {
+    font-size: 13px; padding: 6px 8px;
+    border: 1.5px solid var(--rule); border-radius: 6px;
+    background: var(--off); color: var(--black);
+    width: 100%; outline: none;
+    transition: border-color 0.2s;
+  }
+  .criteria td input:focus, .criteria td select:focus { border-color: var(--black); }
+  .criteria td.target { font-size: 11px; color: var(--light); }
+  .criteria td.status { text-align: center; font-weight: 700; font-size: 13px; min-width: 36px; }
+  .status.pass  { color: var(--green); }
+  .status.warn  { color: var(--amber); }
+  .status.fail  { color: var(--red); }
+  .status.empty { color: var(--light); }
+
+  /* CRITERIA ROW LABEL */
+  .crit-label { font-size: 13px; color: var(--mid); }
+  .crit-sub   { font-size: 11px; color: var(--light); font-style: italic; margin-top: 2px; }
+
+  /* NOTES */
+  .notes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px) { .notes-grid { grid-template-columns: 1fr; } }
+  .field textarea {
+    font-size: 13px; padding: 10px 12px; min-height: 72px;
+    border: 1.5px solid var(--rule); border-radius: 8px;
+    background: var(--off); color: var(--black); outline: none;
+    resize: vertical; line-height: 1.5; font-family: inherit;
+    transition: border-color 0.2s; width: 100%;
+  }
+  .field textarea:focus { border-color: var(--black); background: var(--white); }
+
+  /* CTA */
+  .cta-bar {
+    background: var(--black);
+    border-radius: 12px;
+    padding: 28px 24px;
+    text-align: center;
+    margin-top: 24px;
+  }
+  .cta-bar h3 { font-size: 18px; font-weight: 700; color: var(--white); margin-bottom: 8px; }
+  .cta-bar p  { font-size: 13px; color: #888; margin-bottom: 16px; }
+  .cta-bar a  {
+    display: inline-block;
+    background: var(--white); color: var(--black);
+    font-size: 13px; font-weight: 700;
+    padding: 10px 24px; border-radius: 8px;
+    text-decoration: none;
+    letter-spacing: 0.02em;
+  }
+  .cta-bar a:hover { background: #e8e6e3; }
+
+  /* RESET BTN */
+  .top-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .top-bar h2 { font-size: 11px; font-weight: 700; color: var(--light); text-transform: uppercase; letter-spacing: 0.08em; }
+  .reset-btn {
+    font-size: 12px; color: var(--light);
+    background: var(--card); border: 1px solid var(--rule);
+    border-radius: 6px; padding: 6px 14px; cursor: pointer;
+    font-family: inherit;
+  }
+  .reset-btn:hover { background: var(--off); color: var(--mid); }
+
+  /* SCORE BAR */
+  .score-bar-wrap { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .score-bar { flex: 1; height: 4px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+  .score-bar-fill { height: 100%; border-radius: 2px; background: var(--light); transition: width 0.4s, background 0.3s; }
+  .score-bar-pct { font-size: 11px; font-weight: 600; color: var(--light); min-width: 32px; text-align: right; }
+
+  /* divider */
+  .divider { height: 1px; background: var(--rule); margin: 14px 0; }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <span class="logo">Product Validation Calculator</span>
+  <span class="handle">@nikrunsit</span>
+</header>
+
+<div class="hero">
+  <h1>Does this product<br>actually work?</h1>
+  <p>Fill in your research data. Get a scored GO / NO-GO verdict with live margin, break-even TACoS, and opportunity score.</p>
+</div>
+
+<div class="main">
+
+  <div class="top-bar">
+    <h2>Your research data</h2>
+    <button class="reset-btn" onclick="resetAll()">Reset all</button>
+  </div>
+
+  <!-- VERDICT -->
+  <div class="verdict-banner" id="verdict-box">
+    <div class="verdict-score" id="verdict-score">—</div>
+    <div class="verdict-text">
+      <div class="label" id="verdict-label">Awaiting data</div>
+      <div class="desc" id="verdict-desc">Fill in your product metrics to get a scored verdict.</div>
+    </div>
+  </div>
+
+  <!-- METRIC PILLS -->
+  <div class="metric-pills">
+    <div class="pill-card">
+      <div class="pill-label">Opportunity score</div>
+      <div class="pill-value" id="pill-score">—</div>
+      <div class="pill-sub">out of 100</div>
+    </div>
+    <div class="pill-card">
+      <div class="pill-label">Net margin</div>
+      <div class="pill-value" id="pill-margin">—</div>
+      <div class="pill-sub">after COGS + FBA</div>
+    </div>
+    <div class="pill-card">
+      <div class="pill-label">Break-even TACoS</div>
+      <div class="pill-value" id="pill-tacos">—</div>
+      <div class="pill-sub">max ad spend %</div>
+    </div>
+    <div class="pill-card">
+      <div class="pill-label">Market revenue</div>
+      <div class="pill-value" id="pill-rev">—</div>
+      <div class="pill-sub">top 3 avg / month</div>
+    </div>
+  </div>
+
+  <!-- SECTION 1: BASICS -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">1</div>
+      <div class="section-title">Product basics & unit economics</div>
+    </div>
+    <div class="section-body">
+      <div class="field-grid">
+        <div class="field">
+          <label>Product idea / niche</label>
+          <input type="text" id="product-name" placeholder="e.g. Collagen Peptides Powder" oninput="calc()">
+        </div>
+        <div class="field">
+          <label>Category</label>
+          <select id="category" onchange="calc()">
+            <option value="">Select category</option>
+            <option>Health &amp; Personal Care</option>
+            <option>Sports &amp; Outdoors</option>
+            <option>Beauty</option>
+            <option>Home &amp; Kitchen</option>
+            <option>Pet Supplies</option>
+            <option>Baby</option>
+            <option>Grocery</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Selling price (£/$)</label>
+          <input type="number" id="price" placeholder="e.g. 29.99" step="0.01" oninput="calc()">
+          <span class="hint">Avg. of top 3 competitors</span>
+        </div>
+        <div class="field">
+          <label>COGS per unit (landed)</label>
+          <input type="number" id="cogs" placeholder="e.g. 6.00" step="0.01" oninput="calc()">
+          <span class="hint">Product + packaging cost</span>
+        </div>
+        <div class="field">
+          <label>Shipping per unit</label>
+          <input type="number" id="ship" placeholder="e.g. 1.20" step="0.01" oninput="calc()">
+          <span class="hint">Weight × freight rate</span>
+        </div>
+        <div class="field">
+          <label>FBA fulfilment fee</label>
+          <input type="number" id="fba" placeholder="e.g. 4.50" step="0.01" oninput="calc()">
+          <span class="hint">From Amazon FBA Calculator</span>
+        </div>
+        <div class="field">
+          <label>Referral fee %</label>
+          <input type="number" id="ref" placeholder="e.g. 15" step="0.5" oninput="calc()">
+          <span class="hint">Usually 15% for most categories</span>
+        </div>
+        <div class="field">
+          <label>Storage fee / unit</label>
+          <input type="number" id="storage" placeholder="e.g. 0.40" step="0.01" oninput="calc()">
+          <span class="hint">Monthly × 3 for buffer</span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Live margin breakdown -->
+      <div style="background:#F7F6F3; border-radius:8px; padding:14px 16px;">
+        <div style="font-size:11px;font-weight:700;color:var(--light);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;">Live margin breakdown</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;" id="margin-breakdown">
+          <div><div style="font-size:10px;color:var(--light);">Gross profit/unit</div><div style="font-size:15px;font-weight:700;" id="mb-gross">—</div></div>
+          <div><div style="font-size:10px;color:var(--light);">Net margin</div><div style="font-size:15px;font-weight:700;" id="mb-margin">—</div></div>
+          <div><div style="font-size:10px;color:var(--light);">Break-even TACoS</div><div style="font-size:15px;font-weight:700;" id="mb-tacos">—</div></div>
+          <div><div style="font-size:10px;color:var(--light);">After 15% TACoS</div><div style="font-size:15px;font-weight:700;" id="mb-15">—</div></div>
+          <div><div style="font-size:10px;color:var(--light);">After 25% TACoS</div><div style="font-size:15px;font-weight:700;" id="mb-25">—</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: DEMAND -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">2</div>
+      <div class="section-title">Demand signals</div>
+    </div>
+    <div class="section-body">
+      <table class="criteria">
+        <thead>
+          <tr>
+            <th style="width:42%">Criterion</th>
+            <th style="width:30%">Your data</th>
+            <th style="width:16%">Target</th>
+            <th style="width:12%;text-align:center">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><div class="crit-label">Monthly search volume (main KW)</div></td>
+            <td><input type="number" id="sv" placeholder="e.g. 18000" oninput="calc()"></td>
+            <td class="target">&gt; 5,000</td>
+            <td class="status empty" id="s-sv">—</td>
+          </tr>
+          <tr>
+            <td><div class="crit-label">Top 3 competitors avg monthly revenue</div></td>
+            <td><input type="number" id="comp-rev" placeholder="e.g. 45000" oninput="calc()"></td>
+            <td class="target">&gt; £20k</td>
+            <td class="status empty" id="s-rev">—</td>
+          </tr>
+          <tr>
+            <td><div class="crit-label">Top competitor BSR</div></td>
+            <td><input type="number" id="bsr" placeholder="e.g. 4200" oninput="calc()"></td>
+            <td class="target">&lt; 10,000</td>
+            <td class="status empty" id="s-bsr">—</td>
+          </tr>
+          <tr>
+            <td><div class="crit-label">TikTok trend signal</div></td>
+            <td>
+              <select id="tiktok" onchange="calc()">
+                <option value="">Select</option>
+                <option value="strong">Strong (#viral content)</option>
+                <option value="growing">Growing (views rising)</option>
+                <option value="flat">Flat</option>
+                <option value="none">No signal</option>
+              </select>
+            </td>
+            <td class="target">Growing+</td>
+            <td class="status empty" id="s-tik">—</td>
+          </tr>
+          <tr>
+            <td><div class="crit-label">Google Trends (12 months)</div></td>
+            <td>
+              <select id="gtrends" onchange="calc()">
+                <option value="">Select</option>
+                <option value="up">Trending up</option>
+                <option value="stable">Stable</option>
+                <option value="seasonal">Seasonal</option>
+                <option value="down">Declining</option>
+              </select>
+            </td>
+            <td class="target">Up or stable</td>
+            <td class="status empty" id="s-gt">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SECTION 3: COMPETITION -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">3</div>
+      <div class="section-title">Competition assessment</div>
+    </div>
+    <div class="section-body">
+      <table class="criteria">
+        <thead>
+          <tr>
+            <th style="width:42%">Criterion</th>
+            <th style="width:30%">Your data</th>
+            <th style="width:16%">Target</th>
+            <th style="width:12%;text-align:center">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><div class="crit-label">Avg reviews — top 10 listings</div></td>
+            <td><input type="number" id="avg-rev" placeholder="e.g. 850" oninput="calc()"></td>
+            <td class="target">&lt; 1,000</td>
+            <td class="status empty" id="s-ar">—</td>
+          </tr>
+          <tr>
+            <td><div class="crit-label">Lowest-reviewed in top 10</div></td>
+            <td><input type="number" id="low-rev" placeholder="e.g. 120" oninput="calc()"></td>
+            <td class="target">&lt; 300</td>
+            <td class="status empty" id="s-lr">—</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="crit-label">Amazon private label in top 10</div>
+              <div class="crit-sub">Amazon Basics / Amazon brand</div>
+            </td>
+            <td>
+              <select id="amzpl" onchange="calc()">
+                <option value="">Select</option>
+                <option value="no">No Amazon brand present</option>
+                <option value="yes">Amazon brand present</option>
+              </select>
+            </td>
+            <td class="target">None</td>
+            <td class="status empty" id="s-apl">—</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="crit-label">Dominant brand (&gt;60% top 3 share)</div>
+            </td>
+            <td>
+              <select id="dominant" onchange="calc()">
+                <option value="">Select</option>
+                <option value="no">No — spread across brands</option>
+                <option value="yes">Yes — one brand dominates</option>
+              </select>
+            </td>
+            <td class="target">No dominant brand</td>
+            <td class="status empty" id="s-dom">—</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="crit-label">Clear review gap / weak complaints</div>
+              <div class="crit-sub">Fixable via your product</div>
+            </td>
+            <td>
+              <select id="gap" onchange="calc()">
+                <option value="">Select</option>
+                <option value="yes">Yes — clear gap I can exploit</option>
+                <option value="partial">Partial — minor angles</option>
+                <option value="no">No — competitors are solid</option>
+              </select>
+            </td>
+            <td class="target">Yes</td>
+            <td class="status empty" id="s-gap">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SECTION 4: DIFFERENTIATION -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">4</div>
+      <div class="section-title">Differentiation & launch viability</div>
+    </div>
+    <div class="section-body">
+      <table class="criteria">
+        <thead>
+          <tr>
+            <th style="width:42%">Criterion</th>
+            <th style="width:30%">Your data</th>
+            <th style="width:16%">Target</th>
+            <th style="width:12%;text-align:center">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><div class="crit-label">Differentiation strength</div></td>
+            <td>
+              <select id="diff" onchange="calc()">
+                <option value="">Select</option>
+                <option value="strong">Strong — clear fixable USP</option>
+                <option value="weak">Weak — minor tweaks only</option>
+                <option value="no">None — pure commodity</option>
+              </select>
+            </td>
+            <td class="target">Strong angle</td>
+            <td class="status empty" id="s-diff">—</td>
+          </tr>
+          <tr>
+            <td><div class="crit-label">MOQ affordable for test order</div></td>
+            <td>
+              <select id="moq" onchange="calc()">
+                <option value="">Select</option>
+                <option value="yes">Yes (&lt; £5k landed)</option>
+                <option value="stretch">Stretch (£5k–7k)</option>
+                <option value="no">No (&gt; £7k required)</option>
+              </select>
+            </td>
+            <td class="target">Yes</td>
+            <td class="status empty" id="s-moq">—</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="crit-label">Compliance — no IP / gating risk</div>
+              <div class="crit-sub">Check Seller Central + patent search</div>
+            </td>
+            <td>
+              <select id="compliance" onchange="calc()">
+                <option value="">Select</option>
+                <option value="clean">Clean — open category, no patents</option>
+                <option value="risk">Potential risk — needs checking</option>
+                <option value="blocked">Blocked or gated</option>
+              </select>
+            </td>
+            <td class="target">Clean</td>
+            <td class="status empty" id="s-comp">—</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="crit-label">Avg CPC (top 3 keywords)</div>
+            </td>
+            <td><input type="number" id="cpc" placeholder="e.g. 0.95" step="0.01" oninput="calc()"></td>
+            <td class="target">&lt; £1.25</td>
+            <td class="status empty" id="s-cpc">—</td>
+          </tr>
+          <tr>
+            <td><div class="crit-label">Suits TikTok / UGC content</div></td>
+            <td>
+              <select id="content" onchange="calc()">
+                <option value="">Select</option>
+                <option value="yes">Yes — visual, results-driven</option>
+                <option value="maybe">Maybe — needs creative angle</option>
+                <option value="no">No — hard to demonstrate</option>
+              </select>
+            </td>
+            <td class="target">Yes</td>
+            <td class="status empty" id="s-cont">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- SECTION 5: NOTES -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">5</div>
+      <div class="section-title">Notes & hypothesis</div>
+    </div>
+    <div class="section-body">
+      <div class="notes-grid">
+        <div class="field">
+          <label>Why this product? What's the angle?</label>
+          <textarea id="hypothesis" placeholder="e.g. No-bloat creatine — review mining shows 'bloating' is the #1 complaint across top 5 sellers. Market is £500k/month. No one has fixed this..."></textarea>
+        </div>
+        <div class="field">
+          <label>Key risks / unknowns</label>
+          <textarea id="risks" placeholder="e.g. Sourcing consistency, claim compliance on listing, price compression from existing brands..."></textarea>
+        </div>
+      </div>
+      <div style="margin-top:12px;">
+        <div class="field">
+          <label>Next action</label>
+          <input type="text" id="next-action" placeholder="e.g. Order 3 samples from Alibaba shortlist, run H10 Black Box on exact keyword cluster">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-bar">
+    <h3>Want the full research guide?</h3>
+    <p>Step-by-step checklist, Claude prompts for every phase, and GO / NO-GO scoring framework.</p>
+    <a href="https://tiktok.com/@nikrunsit" target="_blank">Comment PRODUCT on TikTok @nikrunsit ↗</a>
+  </div>
+
+</div>
+
+<script>
+function n(id) {
+  const v = parseFloat(document.getElementById(id)?.value);
+  return isNaN(v) ? null : v;
+}
+function v(id) {
+  return document.getElementById(id)?.value || '';
+}
+function setEl(id, text, cls) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'status ' + (cls || 'empty');
+}
+function setPill(id, text, cls) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'pill-value ' + (cls || '');
+}
+function setMB(id, text, cls) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = text;
+  el.style.color = cls === 'green' ? 'var(--green)' : cls === 'amber' ? 'var(--amber)' : cls === 'red' ? 'var(--red)' : 'var(--mid)';
+}
+
+function statusFor(val, passThresh, warnThresh, higherIsBetter) {
+  if (val === null) return null;
+  if (higherIsBetter) {
+    if (val >= passThresh) return 'pass';
+    if (val >= warnThresh) return 'warn';
+    return 'fail';
+  } else {
+    if (val <= passThresh) return 'pass';
+    if (val <= warnThresh) return 'warn';
+    return 'fail';
+  }
+}
+
+function selectStatus(val, passVal, warnVal) {
+  if (!val) return null;
+  if (val === passVal) return 'pass';
+  if (val === warnVal) return 'warn';
+  return 'fail';
+}
+
+function statusIcon(s) {
+  if (s === 'pass') return '✓';
+  if (s === 'warn') return '△';
+  if (s === 'fail') return '✗';
+  return '—';
+}
+
+function calc() {
+  const price   = n('price');
+  const cogs    = n('cogs');
+  const ship    = n('ship');
+  const fba     = n('fba');
+  const ref     = n('ref');
+  const storage = n('storage');
+  const sv      = n('sv');
+  const compRev = n('comp-rev');
+  const bsr     = n('bsr');
+  const avgRev  = n('avg-rev');
+  const lowRev  = n('low-rev');
+  const cpc     = n('cpc');
+  const tiktok  = v('tiktok');
+  const gtrends = v('gtrends');
+  const amzpl   = v('amzpl');
+  const dominant= v('dominant');
+  const gap     = v('gap');
+  const diff    = v('diff');
+  const moq     = v('moq');
+  const comp    = v('compliance');
+  const content = v('content');
+
+  // ── MARGIN CALC ──
+  let margin = null, gross = null, beTabos = null;
+  if (price && cogs !== null && ship !== null && fba !== null && ref !== null) {
+    const refAmt = price * (ref / 100);
+    const storageAmt = storage || 0;
+    gross = price - cogs - ship - fba - refAmt - storageAmt;
+    margin = (gross / price) * 100;
+    beTabos = margin;
+  }
+
+  // update pill-rev
+  if (compRev) {
+    const rv = compRev >= 1000 ? '£' + Math.round(compRev/1000) + 'k' : '£' + Math.round(compRev);
+    setPill('pill-rev', rv, compRev >= 20000 ? 'green' : compRev >= 10000 ? 'amber' : 'red');
+    setPill('pill-rev', rv, compRev >= 20000 ? 'green' : compRev >= 10000 ? 'amber' : 'red');
+  } else { setPill('pill-rev', '—', ''); }
+
+  if (margin !== null) {
+    setPill('pill-margin', Math.round(margin) + '%', margin >= 35 ? 'green' : margin >= 25 ? 'amber' : 'red');
+    setPill('pill-tacos', Math.round(beTabos) + '%', beTabos >= 30 ? 'green' : beTabos >= 20 ? 'amber' : 'red');
+    setMB('mb-gross', '£' + gross.toFixed(2), gross > 0 ? 'green' : 'red');
+    setMB('mb-margin', Math.round(margin) + '%', margin >= 35 ? 'green' : margin >= 20 ? 'amber' : 'red');
+    setMB('mb-tacos', Math.round(beTabos) + '%', beTabos >= 30 ? 'green' : beTabos >= 20 ? 'amber' : 'red');
+    const after15 = gross - (price * 0.15);
+    const after25 = gross - (price * 0.25);
+    setMB('mb-15', '£' + after15.toFixed(2), after15 > 0 ? 'green' : 'red');
+    setMB('mb-25', '£' + after25.toFixed(2), after25 > 0 ? 'green' : 'red');
+  } else {
+    ['pill-margin','pill-tacos'].forEach(id => setPill(id,'—',''));
+    ['mb-gross','mb-margin','mb-tacos','mb-15','mb-25'].forEach(id => setMB(id,'—',''));
+  }
+
+  // ── CRITERIA STATUS ──
+  const svS    = sv === null ? null : sv > 10000 ? 'pass' : sv > 5000 ? 'warn' : 'fail';
+  const revS   = compRev === null ? null : compRev > 30000 ? 'pass' : compRev > 15000 ? 'warn' : 'fail';
+  const bsrS   = bsr === null ? null : bsr < 5000 ? 'pass' : bsr < 10000 ? 'warn' : 'fail';
+  const tikS   = !tiktok ? null : (tiktok==='strong'||tiktok==='growing') ? 'pass' : tiktok==='flat' ? 'warn' : 'fail';
+  const gtS    = !gtrends ? null : (gtrends==='up'||gtrends==='stable') ? 'pass' : gtrends==='seasonal' ? 'warn' : 'fail';
+  const arS    = avgRev === null ? null : avgRev < 500 ? 'pass' : avgRev < 1000 ? 'warn' : 'fail';
+  const lrS    = lowRev === null ? null : lowRev < 200 ? 'pass' : lowRev < 350 ? 'warn' : 'fail';
+  const aplS   = !amzpl ? null : amzpl === 'no' ? 'pass' : 'fail';
+  const domS   = !dominant ? null : dominant === 'no' ? 'pass' : 'fail';
+  const gapS   = !gap ? null : gap === 'yes' ? 'pass' : gap === 'partial' ? 'warn' : 'fail';
+  const diffS  = !diff ? null : diff === 'strong' ? 'pass' : diff === 'weak' ? 'warn' : 'fail';
+  const moqS   = !moq ? null : moq === 'yes' ? 'pass' : moq === 'stretch' ? 'warn' : 'fail';
+  const compS  = !comp ? null : comp === 'clean' ? 'pass' : comp === 'risk' ? 'warn' : 'fail';
+  const cpcS   = cpc === null ? null : cpc < 0.80 ? 'pass' : cpc < 1.25 ? 'warn' : 'fail';
+  const contS  = !content ? null : content === 'yes' ? 'pass' : content === 'maybe' ? 'warn' : 'fail';
+  const marginS= margin === null ? null : margin >= 35 ? 'pass' : margin >= 25 ? 'warn' : 'fail';
+
+  [
+    ['s-sv',svS],['s-rev',revS],['s-bsr',bsrS],['s-tik',tikS],['s-gt',gtS],
+    ['s-ar',arS],['s-lr',lrS],['s-apl',aplS],['s-dom',domS],['s-gap',gapS],
+    ['s-diff',diffS],['s-moq',moqS],['s-comp',compS],['s-cpc',cpcS],['s-cont',contS],
+  ].forEach(([id, st]) => setEl(id, statusIcon(st), st || 'empty'));
+
+  // ── OVERALL SCORE ──
+  const allS = [svS,revS,bsrS,tikS,gtS,arS,lrS,aplS,domS,gapS,diffS,moqS,compS,cpcS,contS,marginS];
+  const filled = allS.filter(s => s !== null);
+  if (filled.length === 0) {
+    setPill('pill-score', '—', '');
+    setVerdict('neutral', '—', 'Awaiting data', 'Fill in your product metrics above to get a scored verdict.');
+    return;
+  }
+  const pts = filled.reduce((a,s) => a + (s==='pass'?1:s==='warn'?0.5:0), 0);
+  const pct = Math.round((pts / filled.length) * 100);
+  setPill('pill-score', pct, pct >= 70 ? 'green' : pct >= 50 ? 'amber' : 'red');
+
+  if (pct >= 70 && margin !== null && margin >= 30) {
+    setVerdict('go', pct, '✓ GO', 'Strong opportunity. Margin works, demand is real, competition is beatable. Order samples and move.');
+  } else if (pct >= 55 || (pct >= 45 && margin !== null && margin >= 35)) {
+    setVerdict('caution', pct, '△ Proceed with caution', 'Some red flags. Review your weakest criteria before committing capital.');
+  } else {
+    setVerdict('nogo', pct, '✗ No-go', 'Too many weak signals. Margin broken, competition too stiff, or demand unproven. Keep searching.');
+  }
+}
+
+function setVerdict(type, score, label, desc) {
+  const box = document.getElementById('verdict-box');
+  const sc  = document.getElementById('verdict-score');
+  const lb  = document.getElementById('verdict-label');
+  const ds  = document.getElementById('verdict-desc');
+  box.className = 'verdict-banner ' + (type === 'neutral' ? '' : type);
+  sc.textContent = score;
+  lb.textContent = label;
+  ds.textContent = desc;
+}
+
+function resetAll() {
+  document.querySelectorAll('input, select, textarea').forEach(el => { el.value = ''; });
+  calc();
+}
+</script>
+</body>
+</html>
